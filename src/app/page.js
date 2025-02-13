@@ -6,7 +6,7 @@ import Event from "@/components/Event";
 import Cookies from 'js-cookie';
 
 export default function Home() {
-  const [loggedIn, setLoggedIn] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function Home() {
           <div className="container">
             <div className="row justify-content-center">
               <div className="col-md-4">
-                {isLogin ? <Login /> : <Signup />}
+                {isLogin ? <Login setLoggedIn={setLoggedIn} /> : <Signup setLoggedIn={setLoggedIn} />}
                 <div className="text-center mt-3">
                   <button 
                     className="btn btn-link" 

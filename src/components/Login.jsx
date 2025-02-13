@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import Cookies from 'js-cookie';
+import axios from '@/utils/axios';
 
-export default function Login() {
+export default function Login({setLoggedIn}) {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -22,26 +24,17 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid credentials');
-      }
-
-      // Refresh the page to trigger the auth check
-      window.location.reload();
+      const response = await axios.post('/login', formData);
       
+      if (response.token) {
+        // Set the token in cookies
+        Cookies.set('auth_token', response.token);
+        setLoggedIn(true);
+        // Redirect to dashboard or home page
+        window.location.reload();
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

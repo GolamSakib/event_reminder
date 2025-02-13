@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
+import axios from '@/utils/axios';
+import Cookies from 'js-cookie';
 
-export default function Signup() {
+const Signup = ({ setLoggedIn }) => {
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
-    confirmPassword: ''
   });
-  
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -21,42 +20,32 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match!");
-      setLoading(false);
-      return;
-    }
 
     try {
-      const response = await fetch('http://localhost:8000/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: formData.username,
-          email: formData.email,
-          password: formData.password
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+      const response = await axios.post('/register', formData);
+      console.log("response", response);
+      if (response.user) {
+        // The cookie is automatically set by Laravel's response
+        // But we can also set it manually to ensure it's available immediately
+        const token = response.token;
+        if (token) {
+          Cookies.set('auth_token', token);
+        }
+        
+        // Update the logged-in state
+        setLoggedIn(true);
+        // Redirect to dashboard or home page
+        window.location.reload();
       }
-
-      // Refresh the page to trigger the auth check
-      window.location.reload();
-      
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      // Handle validation errors
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        const errorMessage = Object.values(errors).flat().join('\n');
+        setError(errorMessage);
+      } else {
+        setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      }
     }
   };
 
@@ -71,13 +60,14 @@ export default function Signup() {
         )}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">Username</label>
+            <label className="form-label">Full Name</label>
             <input
               type="text"
               className="form-control"
-              name="username"
-              value={formData.username}
+              name="name"
+              value={formData.name}
               onChange={handleChange}
+              placeholder="Full Name"
               required
             />
           </div>
@@ -89,6 +79,7 @@ export default function Signup() {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Email"
               required
             />
           </div>
@@ -100,29 +91,20 @@ export default function Signup() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Confirm Password</label>
-            <input
-              type="password"
-              className="form-control"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
+              placeholder="Password"
               required
             />
           </div>
           <button 
             type="submit" 
             className="btn btn-primary w-100"
-            disabled={loading}
           >
-            {loading ? 'Signing up...' : 'Sign Up'}
+            Sign Up
           </button>
         </form>
       </div>
     </div>
   );
-} 
+};
+
+export default Signup; 

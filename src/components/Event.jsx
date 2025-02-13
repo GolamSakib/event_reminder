@@ -5,12 +5,12 @@ import EventModal from "./EventModal";
 import axios from "@/utils/axios";
 import Cookies from 'js-cookie';
 
-export default function Event() {
+export default function Event({setLoggedIn}) {
   const router = useRouter();
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? navigator.onLine : true);
   const [pendingSync, setPendingSync] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,18 +29,15 @@ export default function Event() {
 
   // Handle online/offline status
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      syncPendingEvents(); // This will also call fetchEvents after sync
-    };
+    const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -239,19 +236,21 @@ export default function Event() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/logout', {
-        method: 'POST',
-        credentials: 'include',
+      const response = await axios.post('/logout', {}, {
+        withCredentials: true,
         headers: {
           'Authorization': `Bearer ${Cookies.get('auth_token')}`
         }
       });
 
-      if (response.ok) {
-        // Remove the auth cookie
+      console.log("response", response);
+
+      if (response.status === 200) {
+        // Remove the auth cookie+
         Cookies.remove('auth_token');
         
         // Redirect to login page
+        setLoggedIn(false);
         router.push('/');
       } else {
         throw new Error('Logout failed');
