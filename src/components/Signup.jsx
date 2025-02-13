@@ -8,6 +8,9 @@ export default function Signup() {
     confirmPassword: ''
   });
   
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -15,20 +18,57 @@ export default function Signup() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
+      setLoading(false);
       return;
     }
-    // Handle signup logic here
-    console.log('Signup data:', formData);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: formData.username,
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Refresh the page to trigger the auth check
+      window.location.reload();
+      
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="card shadow">
       <div className="card-body">
         <h2 className="text-center mb-4">Sign Up</h2>
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Username</label>
@@ -74,7 +114,13 @@ export default function Signup() {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary w-100">Sign Up</button>
+          <button 
+            type="submit" 
+            className="btn btn-primary w-100"
+            disabled={loading}
+          >
+            {loading ? 'Signing up...' : 'Sign Up'}
+          </button>
         </form>
       </div>
     </div>

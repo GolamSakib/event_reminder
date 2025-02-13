@@ -1,17 +1,26 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Login from "@/components/Login";
 import Signup from "@/components/Signup";
 import Event from "@/components/Event";
+import Cookies from 'js-cookie';
 
 export default function Home() {
-  const [loggedIn, setLoggedin] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(true);
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    // Check if auth token exists in cookies
+    const token = Cookies.get('auth_token');
+    if (token) {
+      setLoggedIn(true);
+    }
+  }, []);
 
   return (
     <div>
       {loggedIn ? (
-        <Event />
+        <Event setLoggedIn={setLoggedIn} />
       ) : (
         <div className="min-vh-100 d-flex align-items-center justify-content-center">
           <div className="container">

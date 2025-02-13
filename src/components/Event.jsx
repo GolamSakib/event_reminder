@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import EventCard from "./EventCard";
 import EventModal from "./EventModal";
 import axios from "@/utils/axios";
+import Cookies from 'js-cookie';
 
 export default function Event() {
+  const router = useRouter();
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -234,50 +237,89 @@ export default function Event() {
     return [...updatedEvents, ...newPendingEvents];
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${Cookies.get('auth_token')}`
+        }
+      });
+
+      if (response.ok) {
+        // Remove the auth cookie
+        Cookies.remove('auth_token');
+        
+        // Redirect to login page
+        router.push('/');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+      alert('Failed to logout. Please try again.');
+    }
+  };
+
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Events</h2>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowModal(true)}
-          disabled={isLoading}
-        >
-          Create New Event
-        </button>
-      </div>
-
-      {!isOnline && (
-        <div className="alert alert-warning" role="alert">
-          You are currently offline. Changes will be synced when you're back
-          online.
+    <div>
+      <nav className="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div className="container">
+          <span className="navbar-brand">Event Dashboard</span>
+          <button 
+            className="btn btn-danger"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </div>
-      )}
+      </nav>
 
-      <div className="row">
-        {getAllEvents().map((event) => (
-          <div key={event.id} className="col-md-6 col-lg-4">
-            <EventCard
-              event={event}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isPending={pendingSync.some(
-                (p) => p.id === event.id || !event.id
-              )}
-            />
+      <div className="container py-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h2>My Events</h2>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowModal(true)}
+            disabled={isLoading}
+          >
+            Create New Event
+          </button>
+        </div>
+
+        {!isOnline && (
+          <div className="alert alert-warning" role="alert">
+            You are currently offline. Changes will be synced when you're back
+            online.
           </div>
-        ))}
-      </div>
+        )}
 
-      <EventModal
-        show={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setEditingEvent(null);
-        }}
-        onSave={handleSave}
-        event={editingEvent}
-      />
+        <div className="row">
+          {getAllEvents().map((event) => (
+            <div key={event.id} className="col-md-6 col-lg-4">
+              <EventCard
+                event={event}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isPending={pendingSync.some(
+                  (p) => p.id === event.id || !event.id
+                )}
+              />
+            </div>
+          ))}
+        </div>
+
+        <EventModal
+          show={showModal}
+          onClose={() => {
+            setShowModal(false);
+            setEditingEvent(null);
+          }}
+          onSave={handleSave}
+          event={editingEvent}
+        />
+      </div>
     </div>
   );
 }
