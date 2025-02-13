@@ -1,13 +1,20 @@
 import React from 'react';
 
-export default function EventCard({ event, onEdit, onDelete }) {
+export default function EventCard({ event, onEdit, onDelete, isPending }) {
   const isEventPassed = new Date(event.endDate) < new Date();
   
   return (
     <div className={`card mb-3 ${isEventPassed ? 'bg-light' : 'bg-white'}`}>
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-start">
-          <h5 className="card-title">{event.name}</h5>
+          <div>
+            <h5 className="card-title mb-1">{event.name}</h5>
+            {isPending && (
+              <span className="badge bg-warning text-dark mb-2">
+                Pending Sync
+              </span>
+            )}
+          </div>
           <div>
             <button 
               className="btn btn-sm btn-outline-primary me-2" 
