@@ -42,6 +42,7 @@ export default function Event({setLoggedIn}) {
   }, []);
 
   const syncPendingEvents = async () => {
+    debugger;
     if (pendingSync.length === 0) return;
     
     setIsLoading(true);
@@ -51,7 +52,15 @@ export default function Event({setLoggedIn}) {
         try {
           if (event._delete) {
             // Handle deleted events
-            await axios.delete(`/events/${event.id}`);
+            let response=await axios.delete(`/events/${event.id}`,{
+              withCredentials: true,
+              headers: {
+                'Authorization': `Bearer ${Cookies.get('auth_token')}`
+              }
+            });
+            let data=pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
+            setPendingSync(data);
+            localStorage.setItem('pendingSync', JSON.stringify(data));
           } else if (event._update || event.id) {
             // Handle updates
             let response=await axios.put(`/events/${event.id}`, event,{
@@ -59,8 +68,10 @@ export default function Event({setLoggedIn}) {
               headers: {
                 'Authorization': `Bearer ${Cookies.get('auth_token')}`
               }
-            
             });
+            let data=pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
+            setPendingSync(data);
+            localStorage.setItem('pendingSync', JSON.stringify(data));
           } else {
             // Handle new events
             await axios.post('/events', event);
@@ -71,18 +82,18 @@ export default function Event({setLoggedIn}) {
           continue;
         }
       }
-
       // Get successfully synced events
-      const successfulSync = await fetchEvents();
       
-      // Clear only successfully synced events from pendingSync
-      const remainingPending = pendingSync.filter(pendingEvent => {
-        const syncedEvent = successfulSync.find(e => e.event_reminder_id_from_browser === pendingEvent.id);
-        return !syncedEvent;
-      });
+      // const successfulSync = await fetchEvents();
+    
+      // // Clear only successfully synced events from pendingSync
+      // const remainingPending = pendingSync.filter(pendingEvent => {
+      //   const syncedEvent = successfulSync.find(e => e.event_reminder_id_from_browser === pendingEvent.id);
+      //   return !syncedEvent;
+      // });
 
-      setPendingSync(remainingPending);
-      localStorage.setItem('pendingSync', JSON.stringify(remainingPending));
+      // setPendingSync(remainingPending);
+      // localStorage.setItem('pendingSync', JSON.stringify(remainingPending));
 
     } catch (error) {
       console.error('Sync failed:', error);
@@ -92,7 +103,6 @@ export default function Event({setLoggedIn}) {
     }
   };
 
-  // useEffect to run syncPendingEvents after a 10-second delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       syncPendingEvents();
@@ -202,7 +212,12 @@ export default function Event({setLoggedIn}) {
     if (isOnline) {
       setIsLoading(true);
       try {
-        await axios.delete(`/events/${eventId}`);
+        await axios.delete(`/events/${eventId}`,{
+          'withCredentials': true,
+          'headers': {
+            'Authorization': `Bearer ${Cookies.get('auth_token')}`
+          }
+        });
         await fetchEvents();
       } catch (error) {
         const updatedEvents = events.filter((e) => e.id !== eventId);
@@ -226,6 +241,7 @@ export default function Event({setLoggedIn}) {
   };
 
   const addToPendingSync = (eventData) => {
+    debugger;
     const updatedPendingSync = [...pendingSync];
     
     // Check if we're updating an existing pending event
@@ -243,11 +259,19 @@ export default function Event({setLoggedIn}) {
 
     setPendingSync(updatedPendingSync);
     localStorage.setItem('pendingSync', JSON.stringify(updatedPendingSync));
-    
-    // Update local events immediately
-    const updatedEvents = editingEvent
-      ? events.map(e => e.id === eventData.id ? eventData : e)
-      : [...events, eventData];
+
+    if(eventData._delete) {
+      updatedEvents=events.filter(e => e.id !== eventData.id);
+      setEvents(updatedEvents);
+    }
+    if(eventData._update) {
+      updatedEvents=events.map(e => e.id === eventData.id ? eventData : e);
+      setEvents(updatedEvents);
+    }
+
+    // const updatedEvents = editingEvent
+    //   ? events.map(e => e.id === eventData.id ? eventData : e)
+    //   : [...events, eventData];
     setEvents(updatedEvents);
     localStorage.setItem('events', JSON.stringify(updatedEvents));
   };
