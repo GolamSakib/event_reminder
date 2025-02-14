@@ -356,6 +356,7 @@ export default function Event({setLoggedIn}) {
         // If the update fails, add to pending sync
         updatedEvent._update = true; // Mark as an update
         addToPendingSync(updatedEvent);
+        
       }
     } else {
       // If offline, add to pending sync
