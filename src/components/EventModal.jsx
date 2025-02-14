@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-export default function EventModal({ show, onClose, onSave, event = null }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    startDate: '',
-    endDate: '',
-    participants: ['']
-  });
+export default function EventModal({ show, onClose, onSave, event = null,setFormData,formData }) {
+  // const [formData, setFormData] = useState({
+  //   name: '',
+  //   startDate: '',
+  //   endDate: '',
+  //   participants: ['']
+  // });
 
   useEffect(() => {
     if (event) {
       setFormData({
         name: event.name,
+        completed: event.completed,
         startDate: new Date(event.startDate).toISOString().slice(0, 16),
         endDate: new Date(event.endDate).toISOString().slice(0, 16),
         participants: event.participants?.length ? event.participants : ['']

@@ -1,6 +1,7 @@
 import React from 'react';
 
-const EventCard = ({ event, onEdit, onDelete, onToggleCompletion, isPending }) => {
+const EventCard = ({ event, onEdit, onDelete, onToggleCompletion, isPending,setFormData }) => {
+  console.log("event",event);
   const isEventPassed = new Date(event.endDate) < new Date();
   
   return (

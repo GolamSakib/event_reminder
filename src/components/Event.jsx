@@ -13,7 +13,13 @@ export default function Event({setLoggedIn}) {
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? navigator.onLine : true);
   const [pendingSync, setPendingSync] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [formData, setFormData] = useState({
+    name: '',
+    completed: false,
+    startDate: '',
+    endDate: '',
+    participants: ['']
+  });
   // Initial load of events
   useEffect(() => {
     fetchEvents(); // Fetch events when component mounts
@@ -42,7 +48,6 @@ export default function Event({setLoggedIn}) {
   }, []);
 
   const syncPendingEvents = async () => {
-    debugger;
     if (pendingSync.length === 0) return;
     
     setIsLoading(true);
@@ -108,7 +113,7 @@ export default function Event({setLoggedIn}) {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       syncPendingEvents();
-    }, 10000); // 10000 milliseconds = 10 seconds
+    }, 7000); // 10000 milliseconds = 10 seconds
 
     // Cleanup function to clear the timeout
     return () => clearTimeout(timeoutId);
@@ -243,7 +248,7 @@ export default function Event({setLoggedIn}) {
   };
 
   const addToPendingSync = (eventData) => {
-    debugger;
+    let updatedEvents;
     const updatedPendingSync = [...pendingSync];
     
     // Check if we're updating an existing pending event
@@ -264,11 +269,11 @@ export default function Event({setLoggedIn}) {
 
     if(eventData._delete) {
       updatedEvents=events.filter(e => e.id !== eventData.id);
-      setEvents(updatedEvents);
     }
     if(eventData._update) {
-      updatedEvents=events.map(e => e.id === eventData.id ? eventData : e);
-      setEvents(updatedEvents);
+      // updatedEvents=events.map(e => e.id == eventData.id ? eventData : e);
+      updatedEvents=events.filter(e => e.id !== eventData.id);
+
     }
 
     // const updatedEvents = editingEvent
@@ -332,9 +337,8 @@ export default function Event({setLoggedIn}) {
   };
 
   const onToggleCompletion = async (event) => {
-    debugger;
     const updatedEvent = { ...event, completed: !event.completed }; // Toggle completion status
-
+    setFormData((prev)=>({...prev, completed: !prev.completed}));
     if (isOnline) {
       // If online, update the server
       try {
@@ -402,6 +406,7 @@ export default function Event({setLoggedIn}) {
           {getAllEvents().map((event) => (
             <div key={event.id} className="col-md-6 col-lg-4">
               <EventCard
+                setFormData={setFormData}
                 event={event}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
@@ -415,6 +420,8 @@ export default function Event({setLoggedIn}) {
         </div>
 
         <EventModal
+        setFormData={setFormData}
+        formData={formData}
           show={showModal}
           onClose={() => {
             setShowModal(false);
