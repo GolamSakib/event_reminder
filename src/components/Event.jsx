@@ -61,6 +61,7 @@ export default function Event({setLoggedIn}) {
             let data=pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
             setPendingSync(data);
             localStorage.setItem('pendingSync', JSON.stringify(data));
+            await fetchEvents();
           } else if (event._update || event.id) {
             // Handle updates
             let response=await axios.put(`/events/${event.id}`, event,{
@@ -72,6 +73,7 @@ export default function Event({setLoggedIn}) {
             let data=pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
             setPendingSync(data);
             localStorage.setItem('pendingSync', JSON.stringify(data));
+            await fetchEvents();
           } else {
             // Handle new events
             await axios.post('/events', event);
@@ -329,6 +331,39 @@ export default function Event({setLoggedIn}) {
     }
   };
 
+  const onToggleCompletion = async (event) => {
+    debugger;
+    const updatedEvent = { ...event, completed: !event.completed }; // Toggle completion status
+
+    if (isOnline) {
+      // If online, update the server
+      try {
+        const response = await axios.put(`/events/${event.id}`, updatedEvent, {
+          withCredentials: true,
+          headers: {
+            'Authorization': `Bearer ${Cookies.get('auth_token')}`
+          }
+        });
+        
+        if (response.status >= 200 && response.status < 300) {
+          // Call fetchEvents to refresh the events from the server
+          await fetchEvents(); // Refresh events from server
+        } else {
+          throw new Error('Unexpected response status: ' + response.status);
+        }
+      } catch (error) {
+        console.error('Failed to update event:', error);
+        // If the update fails, add to pending sync
+        updatedEvent._update = true; // Mark as an update
+        addToPendingSync(updatedEvent);
+      }
+    } else {
+      // If offline, add to pending sync
+      updatedEvent._update = true; // Mark as an update
+      addToPendingSync(updatedEvent);
+    }
+  };
+
   return (
     <div>
       <nav className="navbar navbar-expand-lg navbar-light bg-light mb-4">
@@ -369,6 +404,7 @@ export default function Event({setLoggedIn}) {
                 event={event}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onToggleCompletion={onToggleCompletion}
                 isPending={pendingSync.some(
                   (p) => p.id === event.id || !event.id
                 )}

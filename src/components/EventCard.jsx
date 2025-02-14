@@ -4,7 +4,7 @@ const EventCard = ({ event, onEdit, onDelete, onToggleCompletion, isPending }) =
   const isEventPassed = new Date(event.endDate) < new Date();
   
   return (
-    <div className={`card mb-4 event-card ${event.completed ? 'bg-success text-white' : isEventPassed ? 'bg-light' : 'bg-white'}`}>
+    <div className={`card mb-4 event-card ${event.completed ? 'bg-success text-black' : isEventPassed ? 'bg-light' : 'bg-white'}`}>
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-start">
           <div>
@@ -17,10 +17,10 @@ const EventCard = ({ event, onEdit, onDelete, onToggleCompletion, isPending }) =
           </div>
           <div>
             <button 
-              className={`btn me-2 ${event.completed ? 'btn-warning' : 'btn-success'}`} 
+              className={`btn me-2 ${event.completed ? 'btn-info' : 'btn-success'}`} 
               onClick={() => onToggleCompletion(event)}
             >
-              {event.completed ? 'Mark as Uncompleted' : 'Mark as Completed'}
+              {event.completed ? 'Mark as pending' : 'Mark as completed'}
             </button>
             <button 
               className="btn me-2 btn-primary" 
