@@ -8,13 +8,31 @@ export default function EventModal({ show, onClose, onSave, event = null,setForm
   //   participants: ['']
   // });
 
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    
+    // Parse the date string in local timezone
+    const d = new Date(dateString);
+    
+    if (isNaN(d.getTime())) return '';
+    
+    // Format maintaining local timezone (YYYY-MM-DDThh:mm)
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     if (event) {
       setFormData({
         name: event.name,
         completed: event.completed,
-        startDate: new Date(event.startDate).toISOString().slice(0, 16),
-        endDate: new Date(event.endDate).toISOString().slice(0, 16),
+        startDate: formatDateForInput(event.startDate),
+        endDate: formatDateForInput(event.endDate),
         participants: event.participants?.length ? event.participants : ['']
       });
     }
