@@ -40,3 +40,30 @@ a {
     color-scheme: dark;
   }
 }
+
+.event-card {
+  height: 270px; /* Set a fixed height */
+  background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%); /* Yellow gradient */
+  color: black; /* Change text color to black for better contrast */
+  transition: transform 0.3s;
+  overflow: hidden; /* Hide overflow content */
+  display: flex; /* Use flexbox for layout */
+  flex-direction: column; /* Stack children vertically */
+  justify-content: space-between; /* Smooth transition for hover effect */
+}
+
+.badge {
+  display: inline-block; /* Ensure it stays inline */
+  margin-bottom: 10px; /* Add some space below the badge */
+}
+
+.event-card:hover {
+  transform: scale(1.05); /* Slightly scale up on hover */
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Space out content */
+  height: 270px; /* Ensure the body takes full height */
+}

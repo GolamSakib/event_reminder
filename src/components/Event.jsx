@@ -54,7 +54,13 @@ export default function Event({setLoggedIn}) {
             await axios.delete(`/events/${event.id}`);
           } else if (event._update || event.id) {
             // Handle updates
-            await axios.put(`/events/${event.id}`, event);
+            let response=await axios.put(`/events/${event.id}`, event,{
+              withCredentials: true,
+              headers: {
+                'Authorization': `Bearer ${Cookies.get('auth_token')}`
+              }
+            
+            });
           } else {
             // Handle new events
             await axios.post('/events', event);
@@ -71,7 +77,7 @@ export default function Event({setLoggedIn}) {
       
       // Clear only successfully synced events from pendingSync
       const remainingPending = pendingSync.filter(pendingEvent => {
-        const syncedEvent = successfulSync.find(e => e.id === pendingEvent.id);
+        const syncedEvent = successfulSync.find(e => e.event_reminder_id_from_browser === pendingEvent.id);
         return !syncedEvent;
       });
 
@@ -86,13 +92,34 @@ export default function Event({setLoggedIn}) {
     }
   };
 
+  // useEffect to run syncPendingEvents after a 10-second delay
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      syncPendingEvents();
+    }, 10000); // 10000 milliseconds = 10 seconds
+
+    // Cleanup function to clear the timeout
+    return () => clearTimeout(timeoutId);
+  }, [pendingSync]); // Dependency array can include pendingSync if you want to sync based on changes
+
   const fetchEvents = async () => {
     try {
+
       setIsLoading(true);
-      const data = await axios.get('/events');
-      setEvents(data);
-      localStorage.setItem('events', JSON.stringify(data));
-      return data;
+      const response = await axios.get('/events', {
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${Cookies.get('auth_token')}`
+        }
+      });
+      console.log("response", response);
+      
+      if (response.status === 200) {
+        setEvents(response.data); // Assuming response.data is the array of events
+        localStorage.setItem('events', JSON.stringify(response.data));
+      }
+      
+      return response.data; // Return the data from the response
     } catch (error) {
       console.error('Failed to fetch events:', error);
       // Fall back to local storage if fetch fails
@@ -102,7 +129,7 @@ export default function Event({setLoggedIn}) {
         setEvents(parsedEvents);
         return parsedEvents;
       }
-      return [];
+      return []; // Return an empty array if no events are found
     } finally {
       setIsLoading(false);
     }
@@ -112,16 +139,33 @@ export default function Event({setLoggedIn}) {
     if (isOnline) {
       setIsLoading(true);
       try {
+        let response; // Declare response variable outside the try block
         if (editingEvent) {
           // Update existing event
-          await axios.put(`/events/${eventData.id}`, eventData);
+          response = await axios.put(`/events/${eventData.id}`, eventData,{
+            withCredentials: true,
+            headers: {
+              'Authorization': `Bearer ${Cookies.get('auth_token')}`
+            }
+          });
         } else {
           // Create new event
-          await axios.post('/events', eventData);
+          response = await axios.post('/events', eventData, {
+            withCredentials: true,
+            headers: {
+              'Authorization': `Bearer ${Cookies.get('auth_token')}`
+            }
+          });
         }
 
-        // Refresh events from server
-        await fetchEvents();
+        console.log("response_while_save_edit", response); // Log the response
+
+        // Check if the response status is in the 2xx range
+        if (response.status >= 200 && response.status < 300) {
+          await fetchEvents(); // Refresh events from server
+        } else {
+          throw new Error('Unexpected response status: ' + response.status);
+        }
       } catch (error) {
         console.error('Save failed:', error);
         // Update UI optimistically and add to pending sync
