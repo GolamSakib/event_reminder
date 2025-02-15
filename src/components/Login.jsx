@@ -42,7 +42,7 @@ export default function Login({setLoggedIn}) {
 
   return (
     <div className="card shadow">
-      <div className="card-body">
+      <div className="login-card-body">
         <h2 className="text-center mb-4">Login</h2>
         {error && (
           <div className="alert alert-danger" role="alert">

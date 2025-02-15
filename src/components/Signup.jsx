@@ -51,7 +51,7 @@ const Signup = ({ setLoggedIn }) => {
 
   return (
     <div className="card shadow">
-      <div className="card-body">
+      <div className="signup-card-body">
         <h2 className="text-center mb-4">Sign Up</h2>
         {error && (
           <div className="alert alert-danger" role="alert">

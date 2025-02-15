@@ -67,3 +67,16 @@ a {
   justify-content: space-between; /* Space out content */
   height: 270px; /* Ensure the body takes full height */
 }
+.login-card-body {
+  background-color: #e7f3fe; /* Light blue background for login */
+  border: 1px solid #b3d7ff; /* Border for login */
+  padding: 20px; /* Padding for the card body */
+  border-radius: 5px; /* Rounded corners */
+}
+
+.signup-card-body {
+  background-color: #e7f3fe; /* Light blue background for login */
+  border: 1px solid #b3d7ff; /* Border for login */
+  padding: 20px; /* Padding for the card body */
+  border-radius: 5px; /* Rounded corners */
+}
