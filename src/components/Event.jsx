@@ -3,9 +3,10 @@ import { useRouter } from 'next/navigation';
 import EventCard from "./EventCard";
 import EventModal from "./EventModal";
 import axios from "@/utils/axios";
+import { Upload } from 'lucide-react';
 import Cookies from 'js-cookie';
 
-export default function Event({setLoggedIn}) {
+export default function Event({ setLoggedIn }) {
   const router = useRouter();
   const [events, setEvents] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +21,48 @@ export default function Event({setLoggedIn}) {
     endDate: '',
     participants: ['']
   });
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileChange = async (event) => {
+    debugger;
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Get file extension
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+    // Check for valid file types
+    const validExtensions = ['csv', 'xlsx', 'xls'];
+    if (!validExtensions.includes(fileExtension)) {
+      alert('Please upload a CSV or Excel file (.csv, .xlsx, .xls)');
+      event.target.value = '';
+      return;
+    }
+
+    const csvData = new FormData();
+    debugger;
+    csvData.append('file', file);
+
+    setIsUploading(true);
+    try {
+      const response = await axios.post('/events/import', csvData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${Cookies.get('auth_token')}`
+        },
+        withCredentials: true
+      });
+
+      alert('File imported successfully!');
+      fetchEvents(); // Refresh the events list
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert('Failed to import file. Please check your file format.');
+    } finally {
+      setIsUploading(false);
+      event.target.value = ''; // Reset file input
+    }
+  };
   // Initial load of events
   useEffect(() => {
     fetchEvents(); // Fetch events when component mounts
@@ -49,7 +92,7 @@ export default function Event({setLoggedIn}) {
 
   const syncPendingEvents = async () => {
     if (pendingSync.length === 0) return;
-    
+
     setIsLoading(true);
     try {
       // Sync each pending event
@@ -57,25 +100,25 @@ export default function Event({setLoggedIn}) {
         try {
           if (event._delete) {
             // Handle deleted events
-            let response=await axios.delete(`/events/${event.id}`,{
+            let response = await axios.delete(`/events/${event.id}`, {
               withCredentials: true,
               headers: {
                 'Authorization': `Bearer ${Cookies.get('auth_token')}`
               }
             });
-            let data=pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
+            let data = pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
             setPendingSync(data);
             localStorage.setItem('pendingSync', JSON.stringify(data));
             await fetchEvents();
           } else if (event._update || event.id) {
             // Handle updates
-            let response=await axios.put(`/events/${event.id}`, event,{
+            let response = await axios.put(`/events/${event.id}`, event, {
               withCredentials: true,
               headers: {
                 'Authorization': `Bearer ${Cookies.get('auth_token')}`
               }
             });
-            let data=pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
+            let data = pendingSync?.filter((pendingEvent) => pendingEvent.id !== event.id);
             setPendingSync(data);
             localStorage.setItem('pendingSync', JSON.stringify(data));
             await fetchEvents();
@@ -90,9 +133,9 @@ export default function Event({setLoggedIn}) {
         }
       }
       // Get successfully synced events
-      
+
       // const successfulSync = await fetchEvents();
-    
+
       // // Clear only successfully synced events from pendingSync
       // const remainingPending = pendingSync.filter(pendingEvent => {
       //   const syncedEvent = successfulSync.find(e => e.event_reminder_id_from_browser === pendingEvent.id);
@@ -130,12 +173,12 @@ export default function Event({setLoggedIn}) {
         }
       });
       console.log("response", response);
-      
+
       if (response.status === 200) {
         setEvents(response.data); // Assuming response.data is the array of events
         localStorage.setItem('events', JSON.stringify(response.data));
       }
-      
+
       return response.data; // Return the data from the response
     } catch (error) {
       console.error('Failed to fetch events:', error);
@@ -159,7 +202,7 @@ export default function Event({setLoggedIn}) {
         let response; // Declare response variable outside the try block
         if (editingEvent) {
           // Update existing event
-          response = await axios.put(`/events/${eventData.id}`, eventData,{
+          response = await axios.put(`/events/${eventData.id}`, eventData, {
             withCredentials: true,
             headers: {
               'Authorization': `Bearer ${Cookies.get('auth_token')}`
@@ -219,7 +262,7 @@ export default function Event({setLoggedIn}) {
     if (isOnline) {
       setIsLoading(true);
       try {
-        await axios.delete(`/events/${eventId}`,{
+        await axios.delete(`/events/${eventId}`, {
           'withCredentials': true,
           'headers': {
             'Authorization': `Bearer ${Cookies.get('auth_token')}`
@@ -250,7 +293,7 @@ export default function Event({setLoggedIn}) {
   const addToPendingSync = (eventData) => {
     let updatedEvents;
     const updatedPendingSync = [...pendingSync];
-    
+
     // Check if we're updating an existing pending event
     const existingPendingIndex = updatedPendingSync.findIndex(
       p => p.id === eventData.id
@@ -267,12 +310,12 @@ export default function Event({setLoggedIn}) {
     setPendingSync(updatedPendingSync);
     localStorage.setItem('pendingSync', JSON.stringify(updatedPendingSync));
 
-    if(eventData._delete) {
-      updatedEvents=events.filter(e => e.id !== eventData.id);
+    if (eventData._delete) {
+      updatedEvents = events.filter(e => e.id !== eventData.id);
     }
-    if(eventData._update) {
+    if (eventData._update) {
       // updatedEvents=events.map(e => e.id == eventData.id ? eventData : e);
-      updatedEvents=events.filter(e => e.id !== eventData.id);
+      updatedEvents = events.filter(e => e.id !== eventData.id);
 
     }
 
@@ -323,7 +366,7 @@ export default function Event({setLoggedIn}) {
       if (response.status === 200) {
         // Remove the auth cookie+
         Cookies.remove('auth_token');
-        
+
         // Redirect to login page
         setLoggedIn(false);
         router.push('/');
@@ -338,7 +381,7 @@ export default function Event({setLoggedIn}) {
 
   const onToggleCompletion = async (event) => {
     const updatedEvent = { ...event, completed: !event.completed }; // Toggle completion status
-    setFormData((prev)=>({...prev, completed: !prev.completed}));
+    setFormData((prev) => ({ ...prev, completed: !prev.completed }));
     if (isOnline) {
       // If online, update the server
       try {
@@ -348,7 +391,7 @@ export default function Event({setLoggedIn}) {
             'Authorization': `Bearer ${Cookies.get('auth_token')}`
           }
         });
-        
+
         if (response.status >= 200 && response.status < 300) {
           // Call fetchEvents to refresh the events from the server
           await fetchEvents(); // Refresh events from server
@@ -360,7 +403,7 @@ export default function Event({setLoggedIn}) {
         // If the update fails, add to pending sync
         updatedEvent._update = true; // Mark as an update
         addToPendingSync(updatedEvent);
-        
+
       }
     } else {
       // If offline, add to pending sync
@@ -374,7 +417,7 @@ export default function Event({setLoggedIn}) {
       <nav className="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <div className="container">
           <span className="navbar-brand">Event Dashboard</span>
-          <button 
+          <button
             className="btn btn-danger"
             onClick={handleLogout}
           >
@@ -393,6 +436,23 @@ export default function Event({setLoggedIn}) {
           >
             Create New Event
           </button>
+          <div className="position-relative d-inline-block">
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"  // Updated to accept Excel files
+              onChange={handleFileChange}
+              className="position-absolute top-0 start-0 opacity-0 w-100 h-100"
+              style={{ cursor: 'pointer', zIndex: 2 }}
+              disabled={isUploading}
+            />
+            <button
+              className="btn btn-primary d-flex align-items-center gap-2"
+              disabled={isUploading}
+            >
+              <Upload size={18} />
+              {isUploading ? 'Importing...' : 'Import CSV'}
+            </button>
+          </div>
         </div>
 
         {!isOnline && (
@@ -420,8 +480,8 @@ export default function Event({setLoggedIn}) {
         </div>
 
         <EventModal
-        setFormData={setFormData}
-        formData={formData}
+          setFormData={setFormData}
+          formData={formData}
           show={showModal}
           onClose={() => {
             setShowModal(false);
