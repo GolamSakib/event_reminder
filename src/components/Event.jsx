@@ -24,7 +24,6 @@ export default function Event({ setLoggedIn }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async (event) => {
-    debugger;
     const file = event.target.files[0];
     if (!file) return;
 
@@ -40,7 +39,6 @@ export default function Event({ setLoggedIn }) {
     }
 
     const csvData = new FormData();
-    debugger;
     csvData.append('file', file);
 
     setIsUploading(true);
@@ -57,7 +55,7 @@ export default function Event({ setLoggedIn }) {
       fetchEvents(); // Refresh the events list
     } catch (error) {
       console.error('Import failed:', error);
-      alert('Failed to import file. Please check your file format.');
+      alert('Failed to import file');
     } finally {
       setIsUploading(false);
       event.target.value = ''; // Reset file input
